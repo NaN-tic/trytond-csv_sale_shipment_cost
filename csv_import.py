@@ -26,48 +26,50 @@ class CSVArchive:
         today = Date.today()
 
         super(CSVArchive, cls).post_import(profile, records)
-        for record in records:
-            sale = Sale(record)
-            
-            cost, currency_id = 0, None
-            if sale.carrier:
-                party_context = {}
-                if sale.party.lang:
-                    party_context['language'] = sale.party.lang.code
+        if profile.model.model == 'sale.sale':
+            for record in records:
+                sale = Sale(record)
 
-                with Transaction().set_context(sale._get_carrier_context()):
-                    cost, currency_id = sale.carrier.get_sale_price()
+                cost, currency_id = 0, None
+                if sale.carrier:
+                    party_context = {}
+                    if sale.party.lang:
+                        party_context['language'] = sale.party.lang.code
 
-                if cost == 0:
-                    continue
+                    with Transaction().set_context(
+                            sale._get_carrier_context()):
+                        cost, currency_id = sale.carrier.get_sale_price()
 
-                if (sale.currency and currency_id != sale.currency.id):
-                    date = sale.sale_date or today
-                    with Transaction().set_context(date=date):
-                        cost = Currency.compute(Currency(currency_id), cost,
-                            sale.currency)
+                    if cost == 0:
+                        continue
 
-                product = sale.carrier.carrier_product
-                with Transaction().set_context(party_context):
-                    description = Product(product.id).rec_name
+                    if (sale.currency and currency_id != sale.currency.id):
+                        date = sale.sale_date or today
+                        with Transaction().set_context(date=date):
+                            cost = Currency.compute(Currency(currency_id),
+                                cost, sale.currency)
 
-                #save delivery - shipment cost line
-                delivery_line = SaleLine()
-                delivery_line.sale = sale
-                delivery_line.product = product
-                delivery_line.quantity = 1
-                delivery_line.unit = product.default_uom
-                delivery_line.unit_price = cost
-                delivery_line.description = description
-                vals = delivery_line.on_change_product()
+                    product = sale.carrier.carrier_product
+                    with Transaction().set_context(party_context):
+                        description = Product(product.id).rec_name
 
-                delivery_line.unit_price = cost
-                delivery_line.shipment_cost = cost
-                delivery_line.amount = cost
-                delivery_line.sequence = 9999
+                    #save delivery - shipment cost line
+                    delivery_line = SaleLine()
+                    delivery_line.sale = sale
+                    delivery_line.product = product
+                    delivery_line.quantity = 1
+                    delivery_line.unit = product.default_uom
+                    delivery_line.unit_price = cost
+                    delivery_line.description = description
+                    vals = delivery_line.on_change_product()
 
-                for k, v in vals.iteritems():
-                    if not hasattr(delivery_line, k):
-                        setattr(delivery_line, k, v)
+                    delivery_line.unit_price = cost
+                    delivery_line.shipment_cost = cost
+                    delivery_line.amount = cost
+                    delivery_line.sequence = 9999
 
-                delivery_line.save()
+                    for k, v in vals.iteritems():
+                        if not hasattr(delivery_line, k):
+                            setattr(delivery_line, k, v)
+
+                    delivery_line.save()
