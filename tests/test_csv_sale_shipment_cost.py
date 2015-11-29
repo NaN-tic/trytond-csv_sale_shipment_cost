@@ -1,23 +1,14 @@
-# This file is part of csv_sale_shipment_cost module for Tryton.
-# The COPYRIGHT file at the top level of this repository contains
-# the full copyright notices and license terms.
-from trytond.tests.test_tryton import test_depends
-import os
-import sys
-import trytond.tests.test_tryton
+# This file is part of the csv_sale_shipment_cost module for Tryton.
+# The COPYRIGHT file at the top level of this repository contains the full
+# copyright notices and license terms.
 import unittest
+import trytond.tests.test_tryton
+from trytond.tests.test_tryton import ModuleTestCase
 
 
-
-class CSVSaleShipmentCostTestCase(unittest.TestCase):
+class CSVSaleShipmentCostTestCase(ModuleTestCase):
     'Test CSV Sale Shipment Cost module'
-
-    def setUp(self):
-        trytond.tests.test_tryton.install_module('csv_sale_shipment_cost')
-
-    def test0006depends(self):
-        'Test depends'
-        test_depends()
+    module = 'csv_sale_shipment_cost'
 
 
 def suite():
@@ -25,6 +16,3 @@ def suite():
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
         CSVSaleShipmentCostTestCase))
     return suite
-
-if __name__ == '__main__':
-    unittest.TextTestRunner(verbosity=2).run(suite())
